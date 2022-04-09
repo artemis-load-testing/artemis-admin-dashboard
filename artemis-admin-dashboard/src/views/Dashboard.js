@@ -17,7 +17,7 @@
 
 */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 // react plugin used to create charts
 // reactstrap components
 import {
@@ -43,23 +43,117 @@ function logError(errorResponse) {
 }
 
 function Dashboard() {
-  const [apiResponse, setApiResponse] = React.useState("");
+  const [grafanaUrl, setGrafanaUrl] = useState("");
+  const [grafanaUsername, setGrafanaUsername] = useState("");
+  const [grafanaPassword, setGrafanaPassword] = useState("");
+  const [telegrafStatus, setTelegrafStatus] = useState("");
+  const [grafanaRunning, setGrafanaRunning] = useState(false);
+  const [grafanaDetails, setGrafanaDetails] = useState(false);
+  const [file, setFile] = useState();
+  const [fileName, setFileName] = useState("");
 
-  // const callAPI = () => {
-  //   fetch("http://localhost:9000/testApi")
-  //     .then((res) => res.text())
-  //     .then((res) => setApiResponse(res));
-  // };
+  const onFileSelect = (event) => {
+    console.log(event.target.files[0]);
+    setFile(event.target.files[0]);
+    setFileName(event.target.files[0].name);
+  };
+
+  const onFileUpload = async () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fileName", fileName);
+    try {
+      const res = await axios.post(
+        "http://localhost:9000/artemisApi/uploadfile",
+        formData
+      );
+      console.log(res);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const getGrafanaUrl = (data) => {
+    setGrafanaUrl(data.split(" ")[5].split("D")[0]);
+  };
+
+  const getGrafanaUserName = (data) => {
+    setGrafanaUsername(data.split(" ")[7]);
+  };
+
+  const getGrafanaPassword = (data) => {
+    const password = data.split(" ")[10];
+    setGrafanaPassword(password);
+  };
+
+  useEffect(() => {
+    setGrafanaUrl(window.localStorage.getItem("grafanaUrl"));
+    setGrafanaUsername(window.localStorage.getItem("grafanaUsername"));
+    setGrafanaPassword(window.localStorage.getItem("grafanaPassword"));
+    setGrafanaRunning(
+      JSON.parse(window.localStorage.getItem("grafanaRunning"))
+    );
+    setGrafanaDetails(
+      JSON.parse(window.localStorage.getItem("grafanaDetails"))
+    );
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("grafanaUrl", grafanaUrl);
+    window.localStorage.setItem("grafanaUsername", grafanaUsername);
+    window.localStorage.setItem("grafanaPassword", grafanaPassword);
+    window.localStorage.setItem("grafanaRunning", grafanaRunning);
+    window.localStorage.setItem("grafanaDetails", grafanaDetails);
+  }, [
+    grafanaUrl,
+    grafanaUsername,
+    grafanaPassword,
+    grafanaRunning,
+    grafanaDetails,
+  ]);
 
   const startGrafana = () => {
-    // can use apiResponse state above to display a message on whether grafana is running or not
     return axios
-      .post("http://localhost:9000/testApi")
-      .then((response) => setApiResponse(response.data))
+      .post("http://localhost:9000/artemisApi/grafanaStart")
+      .then((response) => {
+        getGrafanaUrl(response.data);
+        getGrafanaUserName(response.data);
+        getGrafanaPassword(response.data);
+        setGrafanaRunning(true);
+        setGrafanaDetails(true);
+      })
       .catch(logError);
   };
 
-  React.useEffect(() => {}, []);
+  const resetGrafanaDetails = () => {
+    setGrafanaUrl("");
+    setGrafanaUsername("");
+    setGrafanaPassword("");
+    window.localStorage.removeItem("grafanaUrl");
+    window.localStorage.removeItem("grafanaUsername");
+    window.localStorage.removeItem("grafanaPassword");
+  };
+
+  const stopGrafana = () => {
+    return axios
+      .post("http://localhost:9000/artemisApi/grafanaStop")
+      .then((response) => {
+        console.log(response.data);
+        setGrafanaRunning(false);
+        setGrafanaDetails(false);
+        resetGrafanaDetails();
+      })
+      .catch(logError);
+  };
+
+  const sleepTelegraf = () => {
+    return axios
+      .post("http://localhost:9000/artemisApi/telegrafStop")
+      .then((response) => {
+        setTelegrafStatus(response.data);
+      })
+      .catch(logError);
+  };
 
   return (
     <>
@@ -72,7 +166,7 @@ function Dashboard() {
                 <Row>
                   <Col md="4" xs="5">
                     <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-danger" />
+                      <i className="nc-icon nc-alert-circle-i text-success" />
                     </div>
                   </Col>
                   <Col md="8" xs="7">
@@ -89,8 +183,8 @@ function Dashboard() {
               <CardFooter>
                 <hr />
                 <div className="">
-                  <i className="nc-icon nc-paper" /> FILE_NAME
-                  <Button className="button">Select Test Script</Button>
+                  <input type="file" onChange={onFileSelect} />
+                  <button onClick={onFileUpload}>Upload!</button>
                 </div>
                 <hr />
                 <div className="">
@@ -100,61 +194,80 @@ function Dashboard() {
               </CardFooter>
             </Card>
           </Col>
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardHeader>artemis grafana-start</CardHeader>
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-success" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="">
-                      <p className="card-category">Grafana</p>
-                      <CardTitle tag="p">
-                        <Button onClick={startGrafana}>Start Grafana</Button>
-                      </CardTitle>
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-                Grafana task started.
-                <p>{apiResponse}</p>
-              </CardFooter>
-            </Card>
-          </Col>
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardHeader>artemis grafana-stop</CardHeader>
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-warning" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="">
-                      <p className="card-category">Grafana</p>
-                      <CardTitle tag="p">
-                        <Button>Stop Grafana</Button>
-                      </CardTitle>
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-                Grafana task stopped.
-              </CardFooter>
-            </Card>
-          </Col>
+          {grafanaRunning === false ? (
+            // GRAFANA-START
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis grafana-start</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-success" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">Grafana</p>
+                        <CardTitle tag="p">
+                          <Button onClick={startGrafana}>Start Grafana</Button>
+                        </CardTitle>
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  <hr />
+                </CardFooter>
+              </Card>
+            </Col>
+          ) : (
+            // GRAFANA-STOP
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis grafana-stop</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-danger" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">Grafana</p>
+                        <CardTitle tag="p">
+                          <Button onClick={stopGrafana}>Stop Grafana</Button>
+                        </CardTitle>
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  {grafanaDetails === true ? (
+                    <>
+                      <hr />
+                      <p>Login Details</p>
+                      <p>
+                        URL:{" "}
+                        <a href={grafanaUrl} target="_blank" rel="noreferrer">
+                          {grafanaUrl}
+                        </a>
+                      </p>
+                      <p>Username: {grafanaUsername}</p>
+                      <p>Password: {grafanaPassword}</p>
+                    </>
+                  ) : (
+                    <hr />
+                  )}
+                </CardFooter>
+              </Card>
+            </Col>
+          )}
+
+          {/* TELEGRAF */}
           <Col lg="3" md="6" sm="6">
             <Card className="card-stats">
               <CardHeader>artemis sleep</CardHeader>
@@ -169,7 +282,7 @@ function Dashboard() {
                     <div className="">
                       <p className="card-category">Telegraf</p>
                       <CardTitle tag="p">
-                        <Button>Stop Telegraf</Button>
+                        <Button onClick={sleepTelegraf}>Stop Telegraf</Button>
                       </CardTitle>
                       <p />
                     </div>
@@ -178,7 +291,7 @@ function Dashboard() {
               </CardBody>
               <CardFooter>
                 <hr />
-                Telegraf service stopped.
+                {telegrafStatus}
               </CardFooter>
             </Card>
           </Col>
