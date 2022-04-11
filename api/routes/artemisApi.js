@@ -3,8 +3,47 @@ const router = express.Router();
 const { exec } = require("child_process");
 const path = require("path");
 
-router.get("/grafanaStart", function (req, res) {
-  res.send("Command Run!");
+// INFRASTRUCTURE
+router.post("/deploy", async function (req, res) {
+  await exec(`artemis deploy`, (error, stdout, stderr) => {
+    if (error) {
+      console.log("error: ", error);
+    }
+    if (stderr) {
+      console.log("stderr: ", stderr);
+    }
+    res.send(stderr);
+    console.log("stdout: ", stdout);
+  });
+  console.log("DEPLOY");
+});
+
+router.post("/teardown", async function (req, res) {
+  // need to remove confirmation check from cli and add to front end
+  await exec(`artemis teardown`, (error, stdout, stderr) => {
+    if (error) {
+      console.log("error: ", error);
+    }
+    if (stderr) {
+      console.log("stderr: ", stderr);
+    }
+    console.log("stdout: ", stdout);
+  });
+  console.log("TEARDOWN");
+});
+
+// DELETE TIMESTREAM DATABASE
+router.post("/deletedb", async function (req, res) {
+  await exec(`artemis destroy-db`, (error, stdout, stderr) => {
+    if (error) {
+      console.log("error: ", error);
+    }
+    if (stderr) {
+      console.log("stderr: ", stderr);
+    }
+    console.log("stdout: ", stdout);
+  });
+  console.log("DESTROY-DB");
 });
 
 // GRAFANA START
@@ -66,6 +105,7 @@ router.post("/uploadfile", async function (req, res) {
 });
 
 // RUN TEST SCRIPT
+
 router.post("/runtest", async function (req, res) {
   // need to get the most recently uploaded test script
   // CAN'T RUN WHEN WE UPLOAD INCASE THE USER WANTS TO RE RUN THE SAME TEST, THEY WOULDNT WANT TO UPLOAD AGAIN

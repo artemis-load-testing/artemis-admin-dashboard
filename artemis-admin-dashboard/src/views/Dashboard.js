@@ -43,6 +43,8 @@ function logError(errorResponse) {
 }
 
 function Dashboard() {
+  const [infrastructureDeployed, setInfrastructureDeployed] = useState(false);
+
   const [grafanaUrl, setGrafanaUrl] = useState("");
   const [grafanaUsername, setGrafanaUsername] = useState("");
   const [grafanaPassword, setGrafanaPassword] = useState("");
@@ -87,24 +89,32 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    setGrafanaUrl(window.localStorage.getItem("grafanaUrl"));
-    setGrafanaUsername(window.localStorage.getItem("grafanaUsername"));
-    setGrafanaPassword(window.localStorage.getItem("grafanaPassword"));
+    setGrafanaUrl(window.localStorage.getItem("grafanaUrl") || "");
+    setGrafanaUsername(window.localStorage.getItem("grafanaUsername") || "");
+    setGrafanaPassword(window.localStorage.getItem("grafanaPassword") || "");
     setGrafanaRunning(
-      JSON.parse(window.localStorage.getItem("grafanaRunning"))
+      JSON.parse(window.localStorage.getItem("grafanaRunning")) || false
     );
     setGrafanaDetails(
-      JSON.parse(window.localStorage.getItem("grafanaDetails"))
+      JSON.parse(window.localStorage.getItem("grafanaDetails")) || false
+    );
+    setInfrastructureDeployed(
+      JSON.parse(window.localStorage.getItem("infrastructureDeployed")) || false
     );
   }, []);
 
   useEffect(() => {
+    window.localStorage.setItem(
+      "infrastructureDeployed",
+      infrastructureDeployed
+    );
     window.localStorage.setItem("grafanaUrl", grafanaUrl);
     window.localStorage.setItem("grafanaUsername", grafanaUsername);
     window.localStorage.setItem("grafanaPassword", grafanaPassword);
     window.localStorage.setItem("grafanaRunning", grafanaRunning);
     window.localStorage.setItem("grafanaDetails", grafanaDetails);
   }, [
+    infrastructureDeployed,
     grafanaUrl,
     grafanaUsername,
     grafanaPassword,
@@ -155,9 +165,167 @@ function Dashboard() {
       .catch(logError);
   };
 
+  const destroyDatabase = () => {
+    return axios
+      .post("http://localhost:9000/artemisApi/deletedb")
+      .catch(logError);
+  };
+
+  const deployInfrastructure = () => {
+    return axios
+      .post("http://localhost:9000/artemisApi/deploy")
+      .then((response) => {
+        console.log(response.data);
+        setInfrastructureDeployed(true);
+      })
+      .catch(logError);
+  };
+
+  const teardownInfrastructure = () => {
+    return axios
+      .post("http://localhost:9000/artemisApi/teardown")
+      .then((response) => {
+        console.log(response.data);
+        setInfrastructureDeployed(false);
+      })
+      .catch(logError);
+  };
+
   return (
     <>
       <div className="content">
+        <h4>Infrastructure {infrastructureDeployed}</h4>
+
+        <Row>
+          {infrastructureDeployed === false ? (
+            // DEPLOY
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis deploy</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-success" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">
+                          Deploy Artemis infrastructure on AWS account.
+                        </p>
+                        <CardTitle tag="p">
+                          <Button onClick={deployInfrastructure}>Deploy</Button>
+                        </CardTitle>
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  <hr />
+                </CardFooter>
+              </Card>
+            </Col>
+          ) : (
+            // TEARDOWN
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis teardown</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-danger" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">
+                          Teardown Artemis infrastructure on AWS account. Retain
+                          Artemis database.
+                        </p>
+                        <CardTitle tag="p">
+                          <Button onClick={teardownInfrastructure}>
+                            teardown
+                          </Button>
+                        </CardTitle>
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  <hr />
+                </CardFooter>
+              </Card>
+            </Col>
+          )}
+
+          {/* TIMESTREAM */}
+          <Col lg="3" md="6" sm="6">
+            <Card className="card-stats">
+              <CardHeader>artemis destroy-db</CardHeader>
+              <CardBody>
+                <Row>
+                  <Col md="4" xs="5">
+                    <div className="icon-big text-center icon-warning">
+                      <i className="nc-icon nc-alert-circle-i text-danger" />
+                    </div>
+                  </Col>
+                  <Col md="8" xs="7">
+                    <div className="">
+                      <p className="card-category">
+                        Delete the Artemis database.
+                      </p>
+                      <CardTitle tag="p">
+                        <Button onClick={destroyDatabase}>
+                          Destroy Database
+                        </Button>
+                      </CardTitle>
+                      <p />
+                    </div>
+                  </Col>
+                </Row>
+              </CardBody>
+              <CardFooter>
+                <hr />
+              </CardFooter>
+            </Card>
+          </Col>
+          {/* TELEGRAF */}
+          <Col lg="3" md="6" sm="6">
+            <Card className="card-stats">
+              <CardHeader>artemis sleep</CardHeader>
+              <CardBody>
+                <Row>
+                  <Col md="4" xs="5">
+                    <div className="icon-big text-center icon-warning">
+                      <i className="nc-icon nc-alert-circle-i text-warning" />
+                    </div>
+                  </Col>
+                  <Col md="8" xs="7">
+                    <div className="">
+                      <p className="card-category">
+                        Stop all support container tasks for minimal AWS usage
+                        charges.
+                      </p>
+                      <CardTitle tag="p">
+                        <Button onClick={sleepTelegraf}>Stop Telegraf</Button>
+                      </CardTitle>
+                      <p />
+                    </div>
+                  </Col>
+                </Row>
+              </CardBody>
+              <CardFooter>
+                <hr />
+                {telegrafStatus}
+              </CardFooter>
+            </Card>
+          </Col>
+        </Row>
+        <h4>Testing</h4>
         <Row>
           <Col lg="3" md="6" sm="6">
             <Card className="card-stats">
@@ -266,35 +434,6 @@ function Dashboard() {
               </Card>
             </Col>
           )}
-
-          {/* TELEGRAF */}
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardHeader>artemis sleep</CardHeader>
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-warning" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="">
-                      <p className="card-category">Telegraf</p>
-                      <CardTitle tag="p">
-                        <Button onClick={sleepTelegraf}>Stop Telegraf</Button>
-                      </CardTitle>
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-                {telegrafStatus}
-              </CardFooter>
-            </Card>
-          </Col>
         </Row>
       </div>
     </>
