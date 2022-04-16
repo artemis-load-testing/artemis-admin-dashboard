@@ -30,6 +30,7 @@ import {
   Col,
   Button,
   Spinner,
+  Input,
 } from "reactstrap";
 import axios from "axios";
 
@@ -46,6 +47,8 @@ function logError(errorResponse) {
 function Dashboard() {
   const [infrastructureDeployed, setInfrastructureDeployed] = useState(false);
   const [destroyDbButton, setDestroyDbButton] = useState(false);
+  const [deployButton, setDeployButton] = useState(false);
+  const [teardownButton, setTeardownButton] = useState(false);
   const [grafanaUrl, setGrafanaUrl] = useState("");
   const [grafanaUsername, setGrafanaUsername] = useState("");
   const [grafanaPassword, setGrafanaPassword] = useState("");
@@ -54,11 +57,16 @@ function Dashboard() {
   const [grafanaDetails, setGrafanaDetails] = useState(false);
   const [file, setFile] = useState();
   const [fileName, setFileName] = useState("");
+  const [taskCount, setTaskCount] = useState(0);
 
   const onFileSelect = (event) => {
     console.log(event.target.files[0]);
     setFile(event.target.files[0]);
     setFileName(event.target.files[0].name);
+  };
+
+  const onTaskCountChange = (event) => {
+    setTaskCount(event.target.value);
   };
 
   const onFileUpload = async () => {
@@ -105,6 +113,12 @@ function Dashboard() {
     setDestroyDbButton(
       JSON.parse(window.localStorage.getItem("destroyDbButton")) || false
     );
+    setDeployButton(
+      JSON.parse(window.localStorage.getItem("deployButton")) || false
+    );
+    setTeardownButton(
+      JSON.parse(window.localStorage.getItem("teardownButton")) || false
+    );
   }, []);
 
   useEffect(() => {
@@ -118,6 +132,8 @@ function Dashboard() {
     window.localStorage.setItem("grafanaRunning", grafanaRunning);
     window.localStorage.setItem("grafanaDetails", grafanaDetails);
     window.localStorage.setItem("destroyDbButton", destroyDbButton);
+    window.localStorage.setItem("deployButton", deployButton);
+    window.localStorage.setItem("teardownButton", teardownButton);
   }, [
     infrastructureDeployed,
     grafanaUrl,
@@ -126,6 +142,8 @@ function Dashboard() {
     grafanaRunning,
     grafanaDetails,
     destroyDbButton,
+    deployButton,
+    teardownButton,
   ]);
 
   const startGrafana = () => {
@@ -174,35 +192,45 @@ function Dashboard() {
   const destroyDatabase = () => {
     setDestroyDbButton(true);
     return axios
-      .get("http://localhost:9000/artemisApi/")
+      .post("http://localhost:9000/artemisApi/deletedb")
       .then((response) => {
-        console.log(response);
-        console.log("waiting...");
-        setTimeout(() => {
-          setDestroyDbButton(false);
-        }, 10000);
+        setDestroyDbButton(false);
       })
       .catch(logError);
   };
 
   const deployInfrastructure = () => {
+    setDeployButton(true);
     return axios
       .post("http://localhost:9000/artemisApi/deploy")
       .then((response) => {
         console.log(response.data);
         setInfrastructureDeployed(true);
+        setDeployButton(false);
       })
       .catch(logError);
   };
 
   const teardownInfrastructure = () => {
+    setTeardownButton(true);
     return axios
       .post("http://localhost:9000/artemisApi/teardown")
       .then((response) => {
         console.log(response.data);
         setInfrastructureDeployed(false);
+        setTeardownButton(false);
       })
       .catch(logError);
+  };
+
+  const onRunTest = () => {
+    return axios
+      .post("http://localhost:9000/artemisApi/runtest", null, {
+        params: { taskCount: `${taskCount}` },
+      })
+      .then((response) => {
+        console.log(response);
+      });
   };
 
   return (
@@ -228,9 +256,25 @@ function Dashboard() {
                         <p className="card-category">
                           Deploy Artemis infrastructure on AWS account.
                         </p>
-                        <CardTitle tag="p">
-                          <Button onClick={deployInfrastructure}>Deploy</Button>
-                        </CardTitle>
+                        {deployButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Deploying infrastructure...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={deployInfrastructure}>
+                              Deploy
+                            </Button>
+                          </CardTitle>
+                        )}
                         <p />
                       </div>
                     </Col>
@@ -259,11 +303,25 @@ function Dashboard() {
                           Teardown Artemis infrastructure on AWS account. Retain
                           Artemis database.
                         </p>
-                        <CardTitle tag="p">
-                          <Button onClick={teardownInfrastructure}>
-                            teardown
-                          </Button>
-                        </CardTitle>
+                        {teardownButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Tearing down infrastructure...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={teardownInfrastructure}>
+                              Teardown
+                            </Button>
+                          </CardTitle>
+                        )}
                         <p />
                       </div>
                     </Col>
@@ -301,7 +359,7 @@ function Dashboard() {
                               size="sm"
                               role="status"
                             />
-                            Destroying database...
+                            {"     "}Destroying database...
                           </Button>
                         </CardTitle>
                       ) : (
@@ -369,7 +427,7 @@ function Dashboard() {
                     <div className="">
                       <p className="card-category">card-category</p>
                       <CardTitle tag="p">
-                        <Button>Run Test</Button>
+                        <Button onClick={onRunTest}>Run Test</Button>
                       </CardTitle>
                       <p />
                     </div>
@@ -379,13 +437,19 @@ function Dashboard() {
               <CardFooter>
                 <hr />
                 <div className="">
-                  <input type="file" onChange={onFileSelect} />
+                  <Input type="file" onChange={onFileSelect} />
+                  <br />
                   <Button onClick={onFileUpload}>Upload!</Button>
                 </div>
                 <hr />
                 <div className="">
                   <i className="nc-icon nc-paper" /> Define Task Count
-                  <p className="">0</p>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    onChange={onTaskCountChange}
+                  />
                 </div>
               </CardFooter>
             </Card>

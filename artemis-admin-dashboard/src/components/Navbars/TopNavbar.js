@@ -17,7 +17,6 @@
 
 */
 import React from "react";
-import { Link } from "react-router-dom";
 import {
   Collapse,
   Navbar,
@@ -26,6 +25,9 @@ import {
   NavItem,
   Container,
 } from "reactstrap";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGithub, faNpm } from "@fortawesome/free-brands-svg-icons";
 
 function Header() {
   return (
@@ -40,20 +42,24 @@ function Header() {
         <Collapse navbar className="justify-content-end">
           <Nav navbar>
             <NavItem>
-              <Link to="#pablo" className="nav-link btn-rotate">
-                <i className="nc-icon nc-settings-gear-65" />
-                <p>
-                  <span className="d-lg-none d-md-block">GitHub</span>
-                </p>
-              </Link>
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://www.npmjs.com/package/artemis-load-testing"
+                className="nav-link btn-rotate"
+              >
+                <FontAwesomeIcon icon={faNpm} size="2xl" />
+              </a>
             </NavItem>
             <NavItem>
-              {/* <Link to="#pablo" className="nav-link btn-rotate">
-                <i className="nc-icon nc-settings-gear-65" />
-                <p>
-                  <span className="d-lg-none d-md-block">Npm</span>
-                </p>
-              </Link> */}
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://github.com/artemis-load-testing"
+                className="nav-link btn-rotate"
+              >
+                <FontAwesomeIcon icon={faGithub} size="2xl" />
+              </a>
             </NavItem>
           </Nav>
         </Collapse>
