@@ -29,6 +29,7 @@ import {
   Row,
   Col,
   Button,
+  Spinner,
 } from "reactstrap";
 import axios from "axios";
 
@@ -44,7 +45,7 @@ function logError(errorResponse) {
 
 function Dashboard() {
   const [infrastructureDeployed, setInfrastructureDeployed] = useState(false);
-
+  const [destroyDbButton, setDestroyDbButton] = useState(false);
   const [grafanaUrl, setGrafanaUrl] = useState("");
   const [grafanaUsername, setGrafanaUsername] = useState("");
   const [grafanaPassword, setGrafanaPassword] = useState("");
@@ -101,6 +102,9 @@ function Dashboard() {
     setInfrastructureDeployed(
       JSON.parse(window.localStorage.getItem("infrastructureDeployed")) || false
     );
+    setDestroyDbButton(
+      JSON.parse(window.localStorage.getItem("destroyDbButton")) || false
+    );
   }, []);
 
   useEffect(() => {
@@ -113,6 +117,7 @@ function Dashboard() {
     window.localStorage.setItem("grafanaPassword", grafanaPassword);
     window.localStorage.setItem("grafanaRunning", grafanaRunning);
     window.localStorage.setItem("grafanaDetails", grafanaDetails);
+    window.localStorage.setItem("destroyDbButton", destroyDbButton);
   }, [
     infrastructureDeployed,
     grafanaUrl,
@@ -120,6 +125,7 @@ function Dashboard() {
     grafanaPassword,
     grafanaRunning,
     grafanaDetails,
+    destroyDbButton,
   ]);
 
   const startGrafana = () => {
@@ -166,8 +172,16 @@ function Dashboard() {
   };
 
   const destroyDatabase = () => {
+    setDestroyDbButton(true);
     return axios
-      .post("http://localhost:9000/artemisApi/deletedb")
+      .get("http://localhost:9000/artemisApi/")
+      .then((response) => {
+        console.log(response);
+        console.log("waiting...");
+        setTimeout(() => {
+          setDestroyDbButton(false);
+        }, 10000);
+      })
       .catch(logError);
   };
 
@@ -278,11 +292,25 @@ function Dashboard() {
                       <p className="card-category">
                         Delete the Artemis database.
                       </p>
-                      <CardTitle tag="p">
-                        <Button onClick={destroyDatabase}>
-                          Destroy Database
-                        </Button>
-                      </CardTitle>
+                      {destroyDbButton === true ? (
+                        <CardTitle tag="p">
+                          <Button variant="primary" disabled>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                            />
+                            Destroying database...
+                          </Button>
+                        </CardTitle>
+                      ) : (
+                        <CardTitle tag="p">
+                          <Button onClick={destroyDatabase}>
+                            Destroy Database
+                          </Button>
+                        </CardTitle>
+                      )}
                       <p />
                     </div>
                   </Col>
@@ -352,7 +380,7 @@ function Dashboard() {
                 <hr />
                 <div className="">
                   <input type="file" onChange={onFileSelect} />
-                  <button onClick={onFileUpload}>Upload!</button>
+                  <Button onClick={onFileUpload}>Upload!</Button>
                 </div>
                 <hr />
                 <div className="">
