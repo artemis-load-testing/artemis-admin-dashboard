@@ -3,6 +3,12 @@ const router = express.Router();
 const { exec } = require("child_process");
 const path = require("path");
 
+// for testing spinners
+
+router.get("/", function (req, res) {
+  res.send("you were in the get request");
+});
+
 // INFRASTRUCTURE
 router.post("/deploy", async function (req, res) {
   await exec(`artemis deploy`, (error, stdout, stderr) => {
@@ -20,7 +26,7 @@ router.post("/deploy", async function (req, res) {
 
 router.post("/teardown", async function (req, res) {
   // need to remove confirmation check from cli and add to front end
-  await exec(`artemis teardown`, (error, stdout, stderr) => {
+  await exec(`artemis teardown --yes`, (error, stdout, stderr) => {
     if (error) {
       console.log("error: ", error);
     }
@@ -34,7 +40,7 @@ router.post("/teardown", async function (req, res) {
 
 // DELETE TIMESTREAM DATABASE
 router.post("/deletedb", async function (req, res) {
-  await exec(`artemis destroy-db`, (error, stdout, stderr) => {
+  await exec(`artemis destroy-db --yes`, (error, stdout, stderr) => {
     if (error) {
       console.log("error: ", error);
     }

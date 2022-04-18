@@ -31,15 +31,15 @@ function Sidebar(props) {
     >
       <div className="logo">
         <a
-          href="https://www.creative-tim.com"
+          href="https://github.com/artemis-load-testing"
           className="simple-text logo-mini"
         >
           <div className="logo-img">
-            <img src={logo} alt="react-logo" />
+            <img src={logo} alt="artemis-logo" />
           </div>
         </a>
         <a
-          href="https://www.creative-tim.com"
+          href="https://github.com/artemis-load-testing"
           className="simple-text logo-normal"
         >
           Artemis
@@ -49,10 +49,7 @@ function Sidebar(props) {
         <Nav>
           {props.routes.map((prop, key) => {
             return (
-              <li
-                className=" active"
-                key={key}
-              >
+              <li className=" active" key={key}>
                 <NavLink
                   to={prop.layout + prop.path}
                   className="nav-link"
