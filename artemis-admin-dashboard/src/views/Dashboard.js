@@ -190,47 +190,66 @@ function Dashboard() {
   };
 
   const destroyDatabase = () => {
-    setDestroyDbButton(true);
-    return axios
-      .post("http://localhost:9000/artemisApi/deletedb")
-      .then((response) => {
-        setDestroyDbButton(false);
-      })
-      .catch(logError);
+    if (window.confirm("Are you sure you want to destroy the database?")) {
+      setDestroyDbButton(true);
+      return axios
+        .post("http://localhost:9000/artemisApi/deletedb")
+        .then((response) => {
+          console.log(response.data);
+          setDestroyDbButton(false);
+        })
+        .catch(logError);
+    }
   };
 
   const deployInfrastructure = () => {
-    setDeployButton(true);
-    return axios
-      .post("http://localhost:9000/artemisApi/deploy")
-      .then((response) => {
-        console.log(response.data);
-        setInfrastructureDeployed(true);
-        setDeployButton(false);
-      })
-      .catch(logError);
+    if (
+      window.confirm("Would you like to deploy the artemis infrastructure?")
+    ) {
+      setDeployButton(true);
+      return axios
+        .post("http://localhost:9000/artemisApi/deploy")
+        .then((response) => {
+          console.log(response.data);
+          setInfrastructureDeployed(true);
+          setDeployButton(false);
+        })
+        .catch(logError);
+    }
   };
 
   const teardownInfrastructure = () => {
-    setTeardownButton(true);
-    return axios
-      .post("http://localhost:9000/artemisApi/teardown")
-      .then((response) => {
-        console.log(response.data);
-        setInfrastructureDeployed(false);
-        setTeardownButton(false);
-      })
-      .catch(logError);
+    if (
+      window.confirm(
+        "Are you sure sure you want to destroy the artemis infrastructure?"
+      )
+    ) {
+      setTeardownButton(true);
+      return axios
+        .post("http://localhost:9000/artemisApi/teardown")
+        .then((response) => {
+          console.log(response.data);
+          setInfrastructureDeployed(false);
+          setTeardownButton(false);
+        })
+        .catch(logError);
+    }
   };
 
   const onRunTest = () => {
-    return axios
-      .post("http://localhost:9000/artemisApi/runtest", null, {
-        params: { taskCount: `${taskCount}` },
-      })
-      .then((response) => {
-        console.log(response);
-      });
+    if (
+      window.confirm(
+        "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\n\nAre you ready to start a test?"
+      )
+    ) {
+      return axios
+        .post("http://localhost:9000/artemisApi/runtest", null, {
+          params: { taskCount: `${taskCount}` },
+        })
+        .then((response) => {
+          console.log(response);
+        });
+    }
   };
 
   return (
