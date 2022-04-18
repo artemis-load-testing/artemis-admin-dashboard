@@ -33,6 +33,7 @@ router.post("/teardown", async function (req, res) {
     if (stderr) {
       console.log("stderr: ", stderr);
     }
+    res.send(stdout);
     console.log("stdout: ", stdout);
   });
   console.log("TEARDOWN");
@@ -47,6 +48,7 @@ router.post("/deletedb", async function (req, res) {
     if (stderr) {
       console.log("stderr: ", stderr);
     }
+    res.send(stdout);
     console.log("stdout: ", stdout);
   });
   console.log("DESTROY-DB");
