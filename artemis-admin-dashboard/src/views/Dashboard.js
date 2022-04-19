@@ -61,6 +61,20 @@ function Dashboard() {
   const [runTestButton, setRunTestButton] = useState(false);
   const [grafanaButton, setGrafanaButton] = useState(false);
   const [grafanaStopButton, setGrafanaStopButton] = useState(false);
+  const [sleepButton, setSleepButton] = useState(false);
+
+  const commandIsNotExecuting = () => {
+    const buttons = [
+      destroyDbButton,
+      deployButton,
+      teardownButton,
+      runTestButton,
+      grafanaButton,
+      grafanaStopButton,
+      sleepButton,
+    ];
+    return !buttons.includes(true);
+  };
 
   const onFileSelect = (event) => {
     console.log(event.target.files[0]);
@@ -81,8 +95,10 @@ function Dashboard() {
         "http://localhost:9000/artemisApi/uploadfile",
         formData
       );
+      alert("File upload successful.");
       console.log(res);
     } catch (err) {
+      alert("File upload unsucccessful. Please try again.");
       console.log(err);
     }
   };
@@ -131,6 +147,9 @@ function Dashboard() {
     setGrafanaStopButton(
       JSON.parse(window.localStorage.getItem("grafanaStopButton")) || false
     );
+    setSleepButton(
+      JSON.parse(window.localStorage.getItem("sleepButton")) || false
+    );
   }, []);
 
   useEffect(() => {
@@ -149,6 +168,7 @@ function Dashboard() {
     window.localStorage.setItem("runTestButton", runTestButton);
     window.localStorage.setItem("grafanaStopButton", grafanaStopButton);
     window.localStorage.setItem("grafanaButton", grafanaButton);
+    window.localStorage.setItem("sleepButton", sleepButton);
   }, [
     infrastructureDeployed,
     grafanaUrl,
@@ -162,22 +182,29 @@ function Dashboard() {
     runTestButton,
     grafanaButton,
     grafanaStopButton,
+    sleepButton,
   ]);
 
   const startGrafana = () => {
-    setGrafanaButton(true);
-    return axios
-      .post("http://localhost:9000/artemisApi/grafanaStart")
-      .then((response) => {
-        console.log(response.data);
-        getGrafanaUrl(response.data);
-        getGrafanaUserName(response.data);
-        getGrafanaPassword(response.data);
-        setGrafanaRunning(true);
-        setGrafanaDetails(true);
-        setGrafanaButton(false);
-      })
-      .catch(logError);
+    if (commandIsNotExecuting()) {
+      if (window.confirm("Start grafana dashboard?")) {
+        setGrafanaButton(true);
+        return axios
+          .post("http://localhost:9000/artemisApi/grafanaStart")
+          .then((response) => {
+            console.log(response.data);
+            getGrafanaUrl(response.data);
+            getGrafanaUserName(response.data);
+            getGrafanaPassword(response.data);
+            setGrafanaRunning(true);
+            setGrafanaDetails(true);
+            setGrafanaButton(false);
+          })
+          .catch(logError);
+      }
+    } else {
+      alert("Please wait for current task to finish.");
+    }
   };
 
   const resetGrafanaDetails = () => {
@@ -190,92 +217,119 @@ function Dashboard() {
   };
 
   const stopGrafana = () => {
-    if (window.confirm("Are you sure you want to stop Grafana?")) {
-      setGrafanaStopButton(true);
-      return axios
-        .post("http://localhost:9000/artemisApi/grafanaStop")
-        .then((response) => {
-          console.log(response.data);
-          setGrafanaRunning(false);
-          setGrafanaDetails(false);
-          resetGrafanaDetails();
-          setGrafanaStopButton(false);
-        })
-        .catch(logError);
+    if (commandIsNotExecuting()) {
+      if (window.confirm("Are you sure you want to stop Grafana?")) {
+        setGrafanaStopButton(true);
+        return axios
+          .post("http://localhost:9000/artemisApi/grafanaStop")
+          .then((response) => {
+            console.log(response.data);
+            setGrafanaRunning(false);
+            setGrafanaDetails(false);
+            resetGrafanaDetails();
+            setGrafanaStopButton(false);
+          })
+          .catch(logError);
+      }
+    } else {
+      alert("Please wait for current task to finish.");
     }
   };
 
   const sleepTelegraf = () => {
-    return axios
-      .post("http://localhost:9000/artemisApi/telegrafStop")
-      .then((response) => {
-        setTelegrafStatus(response.data);
-      })
-      .catch(logError);
+    if (commandIsNotExecuting()) {
+      setSleepButton(true);
+      return axios
+        .post("http://localhost:9000/artemisApi/telegrafStop")
+        .then((response) => {
+          setTelegrafStatus(response.data);
+          setSleepButton(false);
+        })
+        .catch(logError);
+    } else {
+      alert("Please wait for current task to finish.");
+    }
   };
 
   const destroyDatabase = () => {
-    if (window.confirm("Are you sure you want to destroy the database?")) {
-      setDestroyDbButton(true);
-      return axios
-        .post("http://localhost:9000/artemisApi/deletedb")
-        .then((response) => {
-          console.log(response.data);
-          setDestroyDbButton(false);
-        })
-        .catch(logError);
+    if (commandIsNotExecuting()) {
+      if (window.confirm("Are you sure you want to destroy the database?")) {
+        setDestroyDbButton(true);
+        return axios
+          .post("http://localhost:9000/artemisApi/deletedb")
+          .then((response) => {
+            console.log(response.data);
+            setDestroyDbButton(false);
+          })
+          .catch(logError);
+      }
+    } else {
+      alert("Please wait for current task to finish.");
     }
   };
 
   const deployInfrastructure = () => {
-    if (
-      window.confirm("Would you like to deploy the artemis infrastructure?")
-    ) {
-      setDeployButton(true);
-      return axios
-        .post("http://localhost:9000/artemisApi/deploy")
-        .then((response) => {
-          console.log(response.data);
-          setInfrastructureDeployed(true);
-          setDeployButton(false);
-        })
-        .catch(logError);
+    if (commandIsNotExecuting()) {
+      if (
+        window.confirm("Would you like to deploy the artemis infrastructure?")
+      ) {
+        alert("This will take about 3 minutes.");
+        setDeployButton(true);
+        return axios
+          .post("http://localhost:9000/artemisApi/deploy")
+          .then((response) => {
+            console.log(response.data);
+            setInfrastructureDeployed(true);
+            setDeployButton(false);
+          })
+          .catch(logError);
+      }
+    } else {
+      alert("Please wait for current task to finish.");
     }
   };
 
   const teardownInfrastructure = () => {
-    if (
-      window.confirm(
-        "Are you sure sure you want to destroy the artemis infrastructure?"
-      )
-    ) {
-      setTeardownButton(true);
-      return axios
-        .post("http://localhost:9000/artemisApi/teardown")
-        .then((response) => {
-          console.log(response.data);
-          setInfrastructureDeployed(false);
-          setTeardownButton(false);
-        })
-        .catch(logError);
+    if (commandIsNotExecuting()) {
+      if (
+        window.confirm(
+          "Are you sure sure you want to destroy the artemis infrastructure?"
+        )
+      ) {
+        setTeardownButton(true);
+        return axios
+          .post("http://localhost:9000/artemisApi/teardown")
+          .then((response) => {
+            console.log(response.data);
+            setInfrastructureDeployed(false);
+            setTeardownButton(false);
+          })
+          .catch(logError);
+      }
+    } else {
+      alert("Please wait for current task to finish.");
     }
   };
 
   const onRunTest = () => {
-    if (
-      window.confirm(
-        "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\n\nAre you ready to start a test?"
-      )
-    ) {
-      setRunTestButton(true);
-      return axios
-        .post("http://localhost:9000/artemisApi/runtest", null, {
-          params: { taskCount: `${taskCount}` },
-        })
-        .then((response) => {
-          console.log(response);
-          setRunTestButton(false);
-        });
+    if (commandIsNotExecuting()) {
+      if (
+        window.confirm(
+          "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\n\nAre you ready to start a test?"
+        )
+      ) {
+        setRunTestButton(true);
+        return axios
+          .post("http://localhost:9000/artemisApi/runtest", null, {
+            params: { taskCount: `${taskCount}` },
+          })
+          .then((response) => {
+            console.log(response);
+            setRunTestButton(false);
+          });
+      }
+    } else {
+      alert("Please wait for current task to finish.");
     }
   };
 
@@ -442,9 +496,23 @@ function Dashboard() {
                         Stop all support container tasks for minimal AWS usage
                         charges.
                       </p>
-                      <CardTitle tag="p">
-                        <Button onClick={sleepTelegraf}>Stop Telegraf</Button>
-                      </CardTitle>
+                      {sleepButton === true ? (
+                        <CardTitle tag="p">
+                          <Button variant="primary" disabled>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                            />
+                            {"     "}Stopping support containers...
+                          </Button>
+                        </CardTitle>
+                      ) : (
+                        <CardTitle tag="p">
+                          <Button onClick={sleepTelegraf}>Sleep</Button>
+                        </CardTitle>
+                      )}
                       <p />
                     </div>
                   </Col>
@@ -471,7 +539,10 @@ function Dashboard() {
                   </Col>
                   <Col md="8" xs="7">
                     <div className="">
-                      <p className="card-category">card-category</p>
+                      <p className="card-category">
+                        Run the uploaded test script concurrently the specified
+                        number of times.
+                      </p>
                       {runTestButton === true ? (
                         <CardTitle tag="p">
                           <Button variant="primary" disabled>
@@ -528,7 +599,9 @@ function Dashboard() {
                     </Col>
                     <Col md="8" xs="7">
                       <div className="">
-                        <p className="card-category">Grafana</p>
+                        <p className="card-category">
+                          Start the Artemis Grafana dashboard.
+                        </p>
                         {grafanaButton === true ? (
                           <CardTitle tag="p">
                             <Button variant="primary" disabled>
@@ -572,7 +645,9 @@ function Dashboard() {
                     </Col>
                     <Col md="8" xs="7">
                       <div className="">
-                        <p className="card-category">Grafana</p>
+                        <p className="card-category">
+                          Stop the Artemis Grafana dashboard.
+                        </p>
                         {grafanaStopButton === true ? (
                           <CardTitle tag="p">
                             <Button variant="primary" disabled>

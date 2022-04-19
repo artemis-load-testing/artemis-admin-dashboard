@@ -95,6 +95,7 @@ router.post("/telegrafStop", async function (req, res) {
     if (stderr) {
       console.log("stderr: ", stderr);
     }
+    res.send(stderr);
     console.log("stdout: ", stdout);
   });
   console.log("SLEEP");
