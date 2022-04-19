@@ -31,7 +31,7 @@ function Sidebar(props) {
     >
       <div className="logo">
         <a
-          href="https://github.com/artemis-load-testing"
+          href="https://artemis-load-testing.github.io"
           className="simple-text logo-mini"
         >
           <div className="logo-img">
@@ -39,7 +39,7 @@ function Sidebar(props) {
           </div>
         </a>
         <a
-          href="https://github.com/artemis-load-testing"
+          href="https://artemis-load-testing.github.io"
           className="simple-text logo-normal"
         >
           Artemis
