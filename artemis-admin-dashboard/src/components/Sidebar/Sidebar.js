@@ -31,6 +31,8 @@ function Sidebar(props) {
     >
       <div className="logo">
         <a
+          target="_blank"
+          rel="noreferrer"
           href="https://artemis-load-testing.github.io"
           className="simple-text logo-mini"
         >
@@ -39,6 +41,8 @@ function Sidebar(props) {
           </div>
         </a>
         <a
+          target="_blank"
+          rel="noreferrer"
           href="https://artemis-load-testing.github.io"
           className="simple-text logo-normal"
         >
