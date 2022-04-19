@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { exec } = require("child_process");
 const path = require("path");
+const filepath = path.join(__dirname, "../../uploaded-test-scripts");
+const filepathEscaped = filepath.replace(/ /g, "\\ ");
+let filename;
 
 // for testing spinners
-
 router.get("/", function (req, res) {
   res.send("you were in the get request");
 });
@@ -102,7 +104,7 @@ router.post("/telegrafStop", async function (req, res) {
 router.post("/uploadfile", async function (req, res) {
   const newpath = path.join(__dirname, "../../uploaded-test-scripts/");
   const file = req.files.file;
-  const filename = file.name;
+  filename = file.name;
 
   file.mv(`${newpath}${filename}`, (err) => {
     if (err) {
@@ -114,19 +116,26 @@ router.post("/uploadfile", async function (req, res) {
 
 // RUN TEST SCRIPT
 router.post("/runtest", async function (req, res) {
-  await exec(
-    `artemis run-test -p ${filepath} -tc 1`,
-    (error, stdout, stderr) => {
-      if (error) {
-        console.log("error: ", error);
-      }
-      if (stderr) {
+  if (filename) {
+    await exec(
+      `artemis run-test -p ${filepathEscaped}/${filename} -tc ${req.query.taskCount}`,
+      (error, stdout, stderr) => {
+        if (error) {
+          console.log("error: ", error);
+        }
+        if (stderr) {
+          console.log("stderr: ", stderr);
+        }
+        console.log("stdout: ", stdout);
+        console.log("RUN-TEST", filepathEscaped);
+        console.log("stdout: ", stdout);
         console.log("stderr: ", stderr);
+        res.send(stdout);
       }
-      console.log("stdout: ", stdout);
-    }
-  );
-  console.log("RUN-TEST", filepath);
+    );
+  } else {
+    res.send("Choose a file to upload.");
+  }
 });
 
 module.exports = router;
