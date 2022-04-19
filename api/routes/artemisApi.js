@@ -113,10 +113,7 @@ router.post("/uploadfile", async function (req, res) {
 });
 
 // RUN TEST SCRIPT
-
 router.post("/runtest", async function (req, res) {
-  // need to get the most recently uploaded test script
-  // CAN'T RUN WHEN WE UPLOAD INCASE THE USER WANTS TO RE RUN THE SAME TEST, THEY WOULDNT WANT TO UPLOAD AGAIN
   await exec(
     `artemis run-test -p ${filepath} -tc 1`,
     (error, stdout, stderr) => {

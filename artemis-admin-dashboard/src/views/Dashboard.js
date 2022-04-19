@@ -58,6 +58,9 @@ function Dashboard() {
   const [file, setFile] = useState();
   const [fileName, setFileName] = useState("");
   const [taskCount, setTaskCount] = useState(0);
+  const [runTestButton, setRunTestButton] = useState(false);
+  const [grafanaButton, setGrafanaButton] = useState(false);
+  const [grafanaStopButton, setGrafanaStopButton] = useState(false);
 
   const onFileSelect = (event) => {
     console.log(event.target.files[0]);
@@ -119,6 +122,15 @@ function Dashboard() {
     setTeardownButton(
       JSON.parse(window.localStorage.getItem("teardownButton")) || false
     );
+    setRunTestButton(
+      JSON.parse(window.localStorage.getItem("runTestButton")) || false
+    );
+    setGrafanaButton(
+      JSON.parse(window.localStorage.getItem("grafanaButton")) || false
+    );
+    setGrafanaStopButton(
+      JSON.parse(window.localStorage.getItem("grafanaStopButton")) || false
+    );
   }, []);
 
   useEffect(() => {
@@ -134,6 +146,9 @@ function Dashboard() {
     window.localStorage.setItem("destroyDbButton", destroyDbButton);
     window.localStorage.setItem("deployButton", deployButton);
     window.localStorage.setItem("teardownButton", teardownButton);
+    window.localStorage.setItem("runTestButton", runTestButton);
+    window.localStorage.setItem("grafanaStopButton", grafanaStopButton);
+    window.localStorage.setItem("grafanaButton", grafanaButton);
   }, [
     infrastructureDeployed,
     grafanaUrl,
@@ -144,17 +159,23 @@ function Dashboard() {
     destroyDbButton,
     deployButton,
     teardownButton,
+    runTestButton,
+    grafanaButton,
+    grafanaStopButton,
   ]);
 
   const startGrafana = () => {
+    setGrafanaButton(true);
     return axios
       .post("http://localhost:9000/artemisApi/grafanaStart")
       .then((response) => {
+        console.log(response.data);
         getGrafanaUrl(response.data);
         getGrafanaUserName(response.data);
         getGrafanaPassword(response.data);
         setGrafanaRunning(true);
         setGrafanaDetails(true);
+        setGrafanaButton(false);
       })
       .catch(logError);
   };
@@ -169,15 +190,19 @@ function Dashboard() {
   };
 
   const stopGrafana = () => {
-    return axios
-      .post("http://localhost:9000/artemisApi/grafanaStop")
-      .then((response) => {
-        console.log(response.data);
-        setGrafanaRunning(false);
-        setGrafanaDetails(false);
-        resetGrafanaDetails();
-      })
-      .catch(logError);
+    if (window.confirm("Are you sure you want to stop Grafana?")) {
+      setGrafanaStopButton(true);
+      return axios
+        .post("http://localhost:9000/artemisApi/grafanaStop")
+        .then((response) => {
+          console.log(response.data);
+          setGrafanaRunning(false);
+          setGrafanaDetails(false);
+          resetGrafanaDetails();
+          setGrafanaStopButton(false);
+        })
+        .catch(logError);
+    }
   };
 
   const sleepTelegraf = () => {
@@ -242,12 +267,14 @@ function Dashboard() {
         "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\n\nAre you ready to start a test?"
       )
     ) {
+      setRunTestButton(true);
       return axios
         .post("http://localhost:9000/artemisApi/runtest", null, {
           params: { taskCount: `${taskCount}` },
         })
         .then((response) => {
           console.log(response);
+          setRunTestButton(false);
         });
     }
   };
@@ -445,9 +472,23 @@ function Dashboard() {
                   <Col md="8" xs="7">
                     <div className="">
                       <p className="card-category">card-category</p>
-                      <CardTitle tag="p">
-                        <Button onClick={onRunTest}>Run Test</Button>
-                      </CardTitle>
+                      {runTestButton === true ? (
+                        <CardTitle tag="p">
+                          <Button variant="primary" disabled>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                            />
+                            {"     "}Tests starting up...
+                          </Button>
+                        </CardTitle>
+                      ) : (
+                        <CardTitle tag="p">
+                          <Button onClick={onRunTest}>Run Test</Button>
+                        </CardTitle>
+                      )}
                       <p />
                     </div>
                   </Col>
@@ -488,9 +529,25 @@ function Dashboard() {
                     <Col md="8" xs="7">
                       <div className="">
                         <p className="card-category">Grafana</p>
-                        <CardTitle tag="p">
-                          <Button onClick={startGrafana}>Start Grafana</Button>
-                        </CardTitle>
+                        {grafanaButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Grafana starting...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={startGrafana}>
+                              Start Grafana
+                            </Button>
+                          </CardTitle>
+                        )}
                         <p />
                       </div>
                     </Col>
@@ -516,9 +573,24 @@ function Dashboard() {
                     <Col md="8" xs="7">
                       <div className="">
                         <p className="card-category">Grafana</p>
-                        <CardTitle tag="p">
-                          <Button onClick={stopGrafana}>Stop Grafana</Button>
-                        </CardTitle>
+                        {grafanaStopButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Grafana stopping...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={stopGrafana}>Stop Grafana</Button>
+                          </CardTitle>
+                        )}
+
                         <p />
                       </div>
                     </Col>
