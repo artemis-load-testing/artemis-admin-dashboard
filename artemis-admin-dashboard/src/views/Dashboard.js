@@ -52,7 +52,6 @@ function Dashboard() {
   const [grafanaUrl, setGrafanaUrl] = useState("");
   const [grafanaUsername, setGrafanaUsername] = useState("");
   const [grafanaPassword, setGrafanaPassword] = useState("");
-  const [telegrafStatus, setTelegrafStatus] = useState("");
   const [grafanaRunning, setGrafanaRunning] = useState(false);
   const [grafanaDetails, setGrafanaDetails] = useState(false);
   const [file, setFile] = useState();
@@ -242,7 +241,6 @@ function Dashboard() {
       return axios
         .post("http://localhost:9000/artemisApi/telegrafStop")
         .then((response) => {
-          setTelegrafStatus(response.data);
           setSleepButton(false);
         })
         .catch(logError);
@@ -271,9 +269,10 @@ function Dashboard() {
   const deployInfrastructure = () => {
     if (commandIsNotExecuting()) {
       if (
-        window.confirm("Would you like to deploy the artemis infrastructure?")
+        window.confirm(
+          "Would you like to deploy the artemis infrastructure?\nThis will take about 3 minutes."
+        )
       ) {
-        alert("This will take about 3 minutes.");
         setDeployButton(true);
         return axios
           .post("http://localhost:9000/artemisApi/deploy")
@@ -520,7 +519,6 @@ function Dashboard() {
               </CardBody>
               <CardFooter>
                 <hr />
-                {telegrafStatus}
               </CardFooter>
             </Card>
           </Col>
