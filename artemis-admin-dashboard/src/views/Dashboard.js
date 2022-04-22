@@ -37,7 +37,6 @@ import routes from "routes.js";
 import Sidebar from "components/Sidebar/Sidebar.js";
 import TopNavbar from "components/Navbars/TopNavbar.js";
 
-
 function logError(errorResponse) {
   const response = errorResponse.response;
 
@@ -60,7 +59,7 @@ function Dashboard() {
   const [grafanaDetails, setGrafanaDetails] = useState(false);
   const [file, setFile] = useState();
   const [fileName, setFileName] = useState("");
-  const [taskCount, setTaskCount] = useState(0);
+  const [taskCount, setTaskCount] = useState(1);
   const [runTestButton, setRunTestButton] = useState(false);
   const [grafanaButton, setGrafanaButton] = useState(false);
   const [grafanaStopButton, setGrafanaStopButton] = useState(false);
@@ -86,6 +85,7 @@ function Dashboard() {
   };
 
   const onTaskCountChange = (event) => {
+    console.log(event.target.value);
     setTaskCount(event.target.value);
   };
 
@@ -246,6 +246,7 @@ function Dashboard() {
         .post("http://localhost:9000/artemisApi/telegrafStop")
         .then((response) => {
           setSleepButton(false);
+          setGrafanaRunning(false);
         })
         .catch(logError);
     } else {
@@ -318,7 +319,7 @@ function Dashboard() {
     if (commandIsNotExecuting()) {
       if (
         window.confirm(
-          "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\n\nAre you ready to start a test?"
+          "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\nEnsure your test script has been uploaded."
         )
       ) {
         setRunTestButton(true);
@@ -583,6 +584,7 @@ function Dashboard() {
                     <i className="nc-icon nc-paper" /> Define Task Count
                     <Input
                       type="number"
+                      value={taskCount}
                       min="1"
                       max="100"
                       onChange={onTaskCountChange}
