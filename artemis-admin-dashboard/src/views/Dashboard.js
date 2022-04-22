@@ -33,6 +33,9 @@ import {
   Input,
 } from "reactstrap";
 import axios from "axios";
+import routes from "routes.js";
+import Sidebar from "components/Sidebar/Sidebar.js";
+import TopNavbar from "components/Navbars/TopNavbar.js";
 
 function logError(errorResponse) {
   const response = errorResponse.response;
@@ -56,7 +59,7 @@ function Dashboard() {
   const [grafanaDetails, setGrafanaDetails] = useState(false);
   const [file, setFile] = useState();
   const [fileName, setFileName] = useState("");
-  const [taskCount, setTaskCount] = useState(0);
+  const [taskCount, setTaskCount] = useState(1);
   const [runTestButton, setRunTestButton] = useState(false);
   const [grafanaButton, setGrafanaButton] = useState(false);
   const [grafanaStopButton, setGrafanaStopButton] = useState(false);
@@ -82,6 +85,7 @@ function Dashboard() {
   };
 
   const onTaskCountChange = (event) => {
+    console.log(event.target.value);
     setTaskCount(event.target.value);
   };
 
@@ -242,6 +246,7 @@ function Dashboard() {
         .post("http://localhost:9000/artemisApi/telegrafStop")
         .then((response) => {
           setSleepButton(false);
+          setGrafanaRunning(false);
         })
         .catch(logError);
     } else {
@@ -314,7 +319,7 @@ function Dashboard() {
     if (commandIsNotExecuting()) {
       if (
         window.confirm(
-          "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\n\nAre you ready to start a test?"
+          "Check that you are not running any other tests.\nArtemis does not allow for concurrent testing.\nEnsure your test script has been uploaded."
         )
       ) {
         setRunTestButton(true);
@@ -333,366 +338,374 @@ function Dashboard() {
   };
 
   return (
-    <>
-      <div className="content">
-        <h4>Infrastructure {infrastructureDeployed}</h4>
+    <div className="wrapper">
+      <Sidebar routes={routes} bgColor={"white"} activeColor={"info"} />
+      <div className="main-panel">
+        <TopNavbar />
 
-        <Row>
-          {infrastructureDeployed === false ? (
-            // DEPLOY
-            <Col lg="3" md="6" sm="6">
-              <Card className="card-stats">
-                <CardHeader>artemis deploy</CardHeader>
-                <CardBody>
-                  <Row>
-                    <Col md="4" xs="5">
-                      <div className="icon-big text-center icon-warning">
-                        <i className="nc-icon nc-alert-circle-i text-success" />
-                      </div>
-                    </Col>
-                    <Col md="8" xs="7">
-                      <div className="">
-                        <p className="card-category">
-                          Deploy Artemis infrastructure on AWS account.
-                        </p>
-                        {deployButton === true ? (
-                          <CardTitle tag="p">
-                            <Button variant="primary" disabled>
-                              <Spinner
-                                as="span"
-                                animation="border"
-                                size="sm"
-                                role="status"
-                              />
-                              {"     "}Deploying infrastructure...
-                            </Button>
-                          </CardTitle>
-                        ) : (
-                          <CardTitle tag="p">
-                            <Button onClick={deployInfrastructure}>
-                              Deploy
-                            </Button>
-                          </CardTitle>
-                        )}
-                        <p />
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-                <CardFooter>
-                  <hr />
-                </CardFooter>
-              </Card>
-            </Col>
-          ) : (
-            // TEARDOWN
-            <Col lg="3" md="6" sm="6">
-              <Card className="card-stats">
-                <CardHeader>artemis teardown</CardHeader>
-                <CardBody>
-                  <Row>
-                    <Col md="4" xs="5">
-                      <div className="icon-big text-center icon-warning">
-                        <i className="nc-icon nc-alert-circle-i text-danger" />
-                      </div>
-                    </Col>
-                    <Col md="8" xs="7">
-                      <div className="">
-                        <p className="card-category">
-                          Teardown Artemis infrastructure on AWS account. Retain
-                          Artemis database.
-                        </p>
-                        {teardownButton === true ? (
-                          <CardTitle tag="p">
-                            <Button variant="primary" disabled>
-                              <Spinner
-                                as="span"
-                                animation="border"
-                                size="sm"
-                                role="status"
-                              />
-                              {"     "}Tearing down infrastructure...
-                            </Button>
-                          </CardTitle>
-                        ) : (
-                          <CardTitle tag="p">
-                            <Button onClick={teardownInfrastructure}>
-                              Teardown
-                            </Button>
-                          </CardTitle>
-                        )}
-                        <p />
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-                <CardFooter>
-                  <hr />
-                </CardFooter>
-              </Card>
-            </Col>
-          )}
+        <div className="content">
+          <h4>Infrastructure {infrastructureDeployed}</h4>
 
-          {/* TIMESTREAM */}
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardHeader>artemis destroy-db</CardHeader>
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-danger" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="">
-                      <p className="card-category">
-                        Delete the Artemis database.
-                      </p>
-                      {destroyDbButton === true ? (
-                        <CardTitle tag="p">
-                          <Button variant="primary" disabled>
-                            <Spinner
-                              as="span"
-                              animation="border"
-                              size="sm"
-                              role="status"
-                            />
-                            {"     "}Destroying database...
-                          </Button>
-                        </CardTitle>
-                      ) : (
-                        <CardTitle tag="p">
-                          <Button onClick={destroyDatabase}>
-                            Destroy Database
-                          </Button>
-                        </CardTitle>
-                      )}
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-              </CardFooter>
-            </Card>
-          </Col>
-          {/* TELEGRAF */}
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardHeader>artemis sleep</CardHeader>
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-warning" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="">
-                      <p className="card-category">
-                        Stop all support container tasks for minimal AWS usage
-                        charges.
-                      </p>
-                      {sleepButton === true ? (
-                        <CardTitle tag="p">
-                          <Button variant="primary" disabled>
-                            <Spinner
-                              as="span"
-                              animation="border"
-                              size="sm"
-                              role="status"
-                            />
-                            {"     "}Stopping support containers...
-                          </Button>
-                        </CardTitle>
-                      ) : (
-                        <CardTitle tag="p">
-                          <Button onClick={sleepTelegraf}>Sleep</Button>
-                        </CardTitle>
-                      )}
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-              </CardFooter>
-            </Card>
-          </Col>
-        </Row>
-        <h4>Testing</h4>
-        <Row>
-          <Col lg="3" md="6" sm="6">
-            <Card className="card-stats">
-              <CardHeader>artemis run-test</CardHeader>
-              <CardBody>
-                <Row>
-                  <Col md="4" xs="5">
-                    <div className="icon-big text-center icon-warning">
-                      <i className="nc-icon nc-alert-circle-i text-success" />
-                    </div>
-                  </Col>
-                  <Col md="8" xs="7">
-                    <div className="">
-                      <p className="card-category">
-                        Run the uploaded test script concurrently the specified
-                        number of times.
-                      </p>
-                      {runTestButton === true ? (
-                        <CardTitle tag="p">
-                          <Button variant="primary" disabled>
-                            <Spinner
-                              as="span"
-                              animation="border"
-                              size="sm"
-                              role="status"
-                            />
-                            {"     "}Tests starting up...
-                          </Button>
-                        </CardTitle>
-                      ) : (
-                        <CardTitle tag="p">
-                          <Button onClick={onRunTest}>Run Test</Button>
-                        </CardTitle>
-                      )}
-                      <p />
-                    </div>
-                  </Col>
-                </Row>
-              </CardBody>
-              <CardFooter>
-                <hr />
-                <div className="">
-                  <Input type="file" onChange={onFileSelect} />
-                  <br />
-                  <Button onClick={onFileUpload}>Upload!</Button>
-                </div>
-                <hr />
-                <div className="">
-                  <i className="nc-icon nc-paper" /> Define Task Count
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    onChange={onTaskCountChange}
-                  />
-                </div>
-              </CardFooter>
-            </Card>
-          </Col>
-          {grafanaRunning === false ? (
-            // GRAFANA-START
-            <Col lg="3" md="6" sm="6">
-              <Card className="card-stats">
-                <CardHeader>artemis grafana-start</CardHeader>
-                <CardBody>
-                  <Row>
-                    <Col md="4" xs="5">
-                      <div className="icon-big text-center icon-warning">
-                        <i className="nc-icon nc-alert-circle-i text-success" />
-                      </div>
-                    </Col>
-                    <Col md="8" xs="7">
-                      <div className="">
-                        <p className="card-category">
-                          Start the Artemis Grafana dashboard.
-                        </p>
-                        {grafanaButton === true ? (
-                          <CardTitle tag="p">
-                            <Button variant="primary" disabled>
-                              <Spinner
-                                as="span"
-                                animation="border"
-                                size="sm"
-                                role="status"
-                              />
-                              {"     "}Grafana starting...
-                            </Button>
-                          </CardTitle>
-                        ) : (
-                          <CardTitle tag="p">
-                            <Button onClick={startGrafana}>
-                              Start Grafana
-                            </Button>
-                          </CardTitle>
-                        )}
-                        <p />
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-                <CardFooter>
-                  <hr />
-                </CardFooter>
-              </Card>
-            </Col>
-          ) : (
-            // GRAFANA-STOP
-            <Col lg="3" md="6" sm="6">
-              <Card className="card-stats">
-                <CardHeader>artemis grafana-stop</CardHeader>
-                <CardBody>
-                  <Row>
-                    <Col md="4" xs="5">
-                      <div className="icon-big text-center icon-warning">
-                        <i className="nc-icon nc-alert-circle-i text-danger" />
-                      </div>
-                    </Col>
-                    <Col md="8" xs="7">
-                      <div className="">
-                        <p className="card-category">
-                          Stop the Artemis Grafana dashboard.
-                        </p>
-                        {grafanaStopButton === true ? (
-                          <CardTitle tag="p">
-                            <Button variant="primary" disabled>
-                              <Spinner
-                                as="span"
-                                animation="border"
-                                size="sm"
-                                role="status"
-                              />
-                              {"     "}Grafana stopping...
-                            </Button>
-                          </CardTitle>
-                        ) : (
-                          <CardTitle tag="p">
-                            <Button onClick={stopGrafana}>Stop Grafana</Button>
-                          </CardTitle>
-                        )}
-
-                        <p />
-                      </div>
-                    </Col>
-                  </Row>
-                </CardBody>
-                <CardFooter>
-                  {grafanaDetails === true ? (
-                    <>
-                      <hr />
-                      <p>Login Details</p>
-                      <p>
-                        URL:{" "}
-                        <a href={grafanaUrl} target="_blank" rel="noreferrer">
-                          {grafanaUrl}
-                        </a>
-                      </p>
-                      <p>Username: {grafanaUsername}</p>
-                      <p>Password: {grafanaPassword}</p>
-                    </>
-                  ) : (
+          <Row>
+            {infrastructureDeployed === false ? (
+              // DEPLOY
+              <Col lg="3" md="6" sm="6">
+                <Card className="card-stats">
+                  <CardHeader>artemis deploy</CardHeader>
+                  <CardBody>
+                    <Row>
+                      <Col md="4" xs="5">
+                        <div className="icon-big text-center icon-warning">
+                          <i className="nc-icon nc-alert-circle-i text-success" />
+                        </div>
+                      </Col>
+                      <Col md="8" xs="7">
+                        <div className="">
+                          <p className="card-category">
+                            Deploy Artemis infrastructure on AWS account.
+                          </p>
+                          {deployButton === true ? (
+                            <CardTitle tag="p">
+                              <Button variant="primary" disabled>
+                                <Spinner
+                                  as="span"
+                                  animation="border"
+                                  size="sm"
+                                  role="status"
+                                />
+                                {"     "}Deploying infrastructure...
+                              </Button>
+                            </CardTitle>
+                          ) : (
+                            <CardTitle tag="p">
+                              <Button onClick={deployInfrastructure}>
+                                Deploy
+                              </Button>
+                            </CardTitle>
+                          )}
+                          <p />
+                        </div>
+                      </Col>
+                    </Row>
+                  </CardBody>
+                  <CardFooter>
                     <hr />
-                  )}
+                  </CardFooter>
+                </Card>
+              </Col>
+            ) : (
+              // TEARDOWN
+              <Col lg="3" md="6" sm="6">
+                <Card className="card-stats">
+                  <CardHeader>artemis teardown</CardHeader>
+                  <CardBody>
+                    <Row>
+                      <Col md="4" xs="5">
+                        <div className="icon-big text-center icon-warning">
+                          <i className="nc-icon nc-alert-circle-i text-danger" />
+                        </div>
+                      </Col>
+                      <Col md="8" xs="7">
+                        <div className="">
+                          <p className="card-category">
+                            Teardown Artemis infrastructure on AWS account.
+                            Retain Artemis database.
+                          </p>
+                          {teardownButton === true ? (
+                            <CardTitle tag="p">
+                              <Button variant="primary" disabled>
+                                <Spinner
+                                  as="span"
+                                  animation="border"
+                                  size="sm"
+                                  role="status"
+                                />
+                                {"     "}Tearing down infrastructure...
+                              </Button>
+                            </CardTitle>
+                          ) : (
+                            <CardTitle tag="p">
+                              <Button onClick={teardownInfrastructure}>
+                                Teardown
+                              </Button>
+                            </CardTitle>
+                          )}
+                          <p />
+                        </div>
+                      </Col>
+                    </Row>
+                  </CardBody>
+                  <CardFooter>
+                    <hr />
+                  </CardFooter>
+                </Card>
+              </Col>
+            )}
+
+            {/* TIMESTREAM */}
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis destroy-db</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-danger" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">
+                          Delete the Artemis database.
+                        </p>
+                        {destroyDbButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Destroying database...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={destroyDatabase}>
+                              Destroy Database
+                            </Button>
+                          </CardTitle>
+                        )}
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  <hr />
                 </CardFooter>
               </Card>
             </Col>
-          )}
-        </Row>
+            {/* TELEGRAF */}
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis sleep</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-warning" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">
+                          Stop all support container tasks for minimal AWS usage
+                          charges.
+                        </p>
+                        {sleepButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Stopping support containers...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={sleepTelegraf}>Sleep</Button>
+                          </CardTitle>
+                        )}
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  <hr />
+                </CardFooter>
+              </Card>
+            </Col>
+          </Row>
+          <h4>Testing</h4>
+          <Row>
+            <Col lg="3" md="6" sm="6">
+              <Card className="card-stats">
+                <CardHeader>artemis run-test</CardHeader>
+                <CardBody>
+                  <Row>
+                    <Col md="4" xs="5">
+                      <div className="icon-big text-center icon-warning">
+                        <i className="nc-icon nc-alert-circle-i text-success" />
+                      </div>
+                    </Col>
+                    <Col md="8" xs="7">
+                      <div className="">
+                        <p className="card-category">
+                          Run the uploaded test script concurrently the
+                          specified number of times.
+                        </p>
+                        {runTestButton === true ? (
+                          <CardTitle tag="p">
+                            <Button variant="primary" disabled>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                              />
+                              {"     "}Tests starting up...
+                            </Button>
+                          </CardTitle>
+                        ) : (
+                          <CardTitle tag="p">
+                            <Button onClick={onRunTest}>Run Test</Button>
+                          </CardTitle>
+                        )}
+                        <p />
+                      </div>
+                    </Col>
+                  </Row>
+                </CardBody>
+                <CardFooter>
+                  <hr />
+                  <div className="">
+                    <Input type="file" onChange={onFileSelect} />
+                    <br />
+                    <Button onClick={onFileUpload}>Upload!</Button>
+                  </div>
+                  <hr />
+                  <div className="">
+                    <i className="nc-icon nc-paper" /> Define Task Count
+                    <Input
+                      type="number"
+                      value={taskCount}
+                      min="1"
+                      max="100"
+                      onChange={onTaskCountChange}
+                    />
+                  </div>
+                </CardFooter>
+              </Card>
+            </Col>
+            {grafanaRunning === false ? (
+              // GRAFANA-START
+              <Col lg="3" md="6" sm="6">
+                <Card className="card-stats">
+                  <CardHeader>artemis grafana-start</CardHeader>
+                  <CardBody>
+                    <Row>
+                      <Col md="4" xs="5">
+                        <div className="icon-big text-center icon-warning">
+                          <i className="nc-icon nc-alert-circle-i text-success" />
+                        </div>
+                      </Col>
+                      <Col md="8" xs="7">
+                        <div className="">
+                          <p className="card-category">
+                            Start the Artemis Grafana dashboard.
+                          </p>
+                          {grafanaButton === true ? (
+                            <CardTitle tag="p">
+                              <Button variant="primary" disabled>
+                                <Spinner
+                                  as="span"
+                                  animation="border"
+                                  size="sm"
+                                  role="status"
+                                />
+                                {"     "}Grafana starting...
+                              </Button>
+                            </CardTitle>
+                          ) : (
+                            <CardTitle tag="p">
+                              <Button onClick={startGrafana}>
+                                Start Grafana
+                              </Button>
+                            </CardTitle>
+                          )}
+                          <p />
+                        </div>
+                      </Col>
+                    </Row>
+                  </CardBody>
+                  <CardFooter>
+                    <hr />
+                  </CardFooter>
+                </Card>
+              </Col>
+            ) : (
+              // GRAFANA-STOP
+              <Col lg="3" md="6" sm="6">
+                <Card className="card-stats">
+                  <CardHeader>artemis grafana-stop</CardHeader>
+                  <CardBody>
+                    <Row>
+                      <Col md="4" xs="5">
+                        <div className="icon-big text-center icon-warning">
+                          <i className="nc-icon nc-alert-circle-i text-danger" />
+                        </div>
+                      </Col>
+                      <Col md="8" xs="7">
+                        <div className="">
+                          <p className="card-category">
+                            Stop the Artemis Grafana dashboard.
+                          </p>
+                          {grafanaStopButton === true ? (
+                            <CardTitle tag="p">
+                              <Button variant="primary" disabled>
+                                <Spinner
+                                  as="span"
+                                  animation="border"
+                                  size="sm"
+                                  role="status"
+                                />
+                                {"     "}Grafana stopping...
+                              </Button>
+                            </CardTitle>
+                          ) : (
+                            <CardTitle tag="p">
+                              <Button onClick={stopGrafana}>
+                                Stop Grafana
+                              </Button>
+                            </CardTitle>
+                          )}
+
+                          <p />
+                        </div>
+                      </Col>
+                    </Row>
+                  </CardBody>
+                  <CardFooter>
+                    {grafanaDetails === true ? (
+                      <>
+                        <hr />
+                        <p>Login Details</p>
+                        <p>
+                          URL:{" "}
+                          <a href={grafanaUrl} target="_blank" rel="noreferrer">
+                            {grafanaUrl}
+                          </a>
+                        </p>
+                        <p>Username: {grafanaUsername}</p>
+                        <p>Password: {grafanaPassword}</p>
+                      </>
+                    ) : (
+                      <hr />
+                    )}
+                  </CardFooter>
+                </Card>
+              </Col>
+            )}
+          </Row>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 

@@ -17,8 +17,6 @@
 
 */
 import React from "react";
-import { NavLink } from "react-router-dom";
-import { Nav } from "reactstrap";
 import logo from "Artemis_graphic_color.png";
 
 function Sidebar(props) {
@@ -49,24 +47,7 @@ function Sidebar(props) {
           Artemis
         </a>
       </div>
-      <div className="sidebar-wrapper" ref={sidebar}>
-        <Nav>
-          {props.routes.map((prop, key) => {
-            return (
-              <li className=" active" key={key}>
-                <NavLink
-                  to={prop.layout + prop.path}
-                  className="nav-link"
-                  activeClassName="active"
-                >
-                  <i className={prop.icon} />
-                  <p>{prop.name}</p>
-                </NavLink>
-              </li>
-            );
-          })}
-        </Nav>
-      </div>
+      <div className="sidebar-wrapper" ref={sidebar}></div>
     </div>
   );
 }
